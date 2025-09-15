@@ -93,38 +93,46 @@ export const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
 
       if (error) throw error;
 
-      if (data.user) {
-        // Create member profile
+      if (data.user && data.session) {
+        // Wait a moment for the session to be established
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Create member profile with proper defaults
+        const memberData = {
+          user_id: data.user.id,
+          name: signupData.name,
+          email: signupData.email,
+          password: '', // Password handled by auth
+          birthdate: signupData.birthdate,
+          gender: signupData.gender,
+          location: signupData.location,
+          relationship_status: 'single',
+          having_kid: 'no',
+          need_kids: 'maybe',
+          education_level: 'college',
+          professionalism: 'employed',
+          alcoholism: 'social',
+          smoker: 'no',
+          height: '170cm',
+          weight: '70kg',
+          preferred_age_from: '25',
+          preferred_age_to: '35',
+          reasons: 'Looking for genuine connections',
+          confirmation_code: Math.random().toString(36).substring(7),
+          confirmed: 'no',
+          subscription: 'free',
+          get_news: 'yes',
+          remember_token: ''
+        };
+
         const { error: profileError } = await supabase
           .from('members')
-          .insert({
-            user_id: data.user.id,
-            name: signupData.name,
-            email: signupData.email,
-            password: '', // Password handled by auth
-            birthdate: signupData.birthdate,
-            gender: signupData.gender,
-            location: signupData.location,
-            relationship_status: signupData.relationship_status,
-            having_kid: signupData.having_kid,
-            need_kids: signupData.need_kids,
-            education_level: signupData.education_level,
-            professionalism: signupData.professionalism,
-            alcoholism: signupData.alcoholism,
-            smoker: signupData.smoker,
-            height: signupData.height,
-            weight: signupData.weight,
-            preferred_age_from: signupData.preferred_age_from,
-            preferred_age_to: signupData.preferred_age_to,
-            reasons: signupData.reasons,
-            confirmation_code: Math.random().toString(36).substring(7),
-            confirmed: 'no',
-            subscription: 'free',
-            get_news: 'yes',
-            remember_token: ''
-          });
+          .insert(memberData);
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          throw profileError;
+        }
       }
 
       toast({
@@ -133,6 +141,7 @@ export const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
       });
       onAuthSuccess();
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast({
         title: "Signup failed",
         description: error.message,
@@ -307,19 +316,6 @@ export const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
                 </div>
               </div>
 
-              {/* Additional fields with defaults for quick signup */}
-              <input type="hidden" value="single" onChange={(e) => setSignupData({...signupData, relationship_status: e.target.value})} />
-              <input type="hidden" value="no" onChange={(e) => setSignupData({...signupData, having_kid: e.target.value})} />
-              <input type="hidden" value="maybe" onChange={(e) => setSignupData({...signupData, need_kids: e.target.value})} />
-              <input type="hidden" value="college" onChange={(e) => setSignupData({...signupData, education_level: e.target.value})} />
-              <input type="hidden" value="employed" onChange={(e) => setSignupData({...signupData, professionalism: e.target.value})} />
-              <input type="hidden" value="social" onChange={(e) => setSignupData({...signupData, alcoholism: e.target.value})} />
-              <input type="hidden" value="no" onChange={(e) => setSignupData({...signupData, smoker: e.target.value})} />
-              <input type="hidden" value="170cm" onChange={(e) => setSignupData({...signupData, height: e.target.value})} />
-              <input type="hidden" value="70kg" onChange={(e) => setSignupData({...signupData, weight: e.target.value})} />
-              <input type="hidden" value="25" onChange={(e) => setSignupData({...signupData, preferred_age_from: e.target.value})} />
-              <input type="hidden" value="35" onChange={(e) => setSignupData({...signupData, preferred_age_to: e.target.value})} />
-              <input type="hidden" value="Looking for genuine connections" onChange={(e) => setSignupData({...signupData, reasons: e.target.value})} />
 
               <Button 
                 type="submit" 
