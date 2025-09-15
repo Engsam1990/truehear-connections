@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, ChevronLeft, Heart } from "lucide-react";
+import { ChevronRight, ChevronLeft, Heart, Upload, X, Camera } from "lucide-react";
 
 interface OnboardingProps {
   currentMember: any;
@@ -17,9 +17,11 @@ interface OnboardingProps {
 export const Onboarding = ({ currentMember, onComplete }: OnboardingProps) => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   
-  const totalSteps = 4;
+  const totalSteps = 5; // Added photo step
   const progress = (step / totalSteps) * 100;
 
   const [profileData, setProfileData] = useState({
@@ -50,7 +52,136 @@ export const Onboarding = ({ currentMember, onComplete }: OnboardingProps) => {
     if (step > 1) setStep(step - 1);
   };
 
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || !currentMember?.user_id) return;
+
+    if (uploadedPhotos.length + files.length > 5) {
+      toast({
+        title: "Too many photos",
+        description: "You can upload a maximum of 5 photos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    const newPhotos: string[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Validate file type
+        if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+          toast({
+            title: "Invalid file type",
+            description: "Please upload only JPG, PNG, or WebP images",
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        // Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: "Please upload images smaller than 5MB",
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        const fileName = `${currentMember.user_id}/${Date.now()}-${i}.${file.name.split('.').pop()}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('profile-photos')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('profile-photos')
+          .getPublicUrl(fileName);
+
+        newPhotos.push(publicUrl);
+
+        // Save to img_links table
+        const { error: dbError } = await supabase
+          .from('img_links')
+          .insert({
+            member_id: currentMember.id,
+            img_id: fileName,
+            is_primary: uploadedPhotos.length === 0 && i === 0
+          });
+
+        if (dbError) throw dbError;
+      }
+
+      setUploadedPhotos(prev => [...prev, ...newPhotos]);
+      
+      toast({
+        title: "Photos uploaded!",
+        description: `${newPhotos.length} photo(s) added to your profile`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removePhoto = async (photoUrl: string, index: number) => {
+    try {
+      // Extract filename from URL
+      const fileName = photoUrl.split('/').pop()?.split('?')[0];
+      if (!fileName) return;
+
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('profile-photos')
+        .remove([`${currentMember.user_id}/${fileName}`]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('img_links')
+        .delete()
+        .eq('img_id', `${currentMember.user_id}/${fileName}`);
+
+      if (dbError) throw dbError;
+
+      setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
+      
+      toast({
+        title: "Photo removed",
+        description: "Photo deleted from your profile",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleComplete = async () => {
+    if (!currentMember?.id) {
+      toast({
+        title: "Error",
+        description: "Member profile not found. Please try refreshing the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -259,6 +390,75 @@ export const Onboarding = ({ currentMember, onComplete }: OnboardingProps) => {
   const renderStep4 = () => (
     <div className="space-y-6">
       <div className="text-center mb-6">
+        <Camera className="w-12 h-12 text-primary mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Add Your Photos</h2>
+        <p className="text-muted-foreground">Upload up to 5 photos to show your personality</p>
+      </div>
+
+      <div className="space-y-4">
+        {/* Photo Upload Area */}
+        <div className="border-2 border-dashed border-input rounded-lg p-6 text-center">
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handlePhotoUpload}
+            className="hidden"
+            id="photo-upload"
+            disabled={uploading || uploadedPhotos.length >= 5}
+          />
+          <label 
+            htmlFor="photo-upload" 
+            className={`cursor-pointer ${uploadedPhotos.length >= 5 ? 'opacity-50' : ''}`}
+          >
+            <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">
+              {uploading ? 'Uploading...' : 
+               uploadedPhotos.length >= 5 ? 'Maximum 5 photos reached' :
+               'Click to upload photos or drag and drop'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              JPG, PNG, WebP up to 5MB each
+            </p>
+          </label>
+        </div>
+
+        {/* Photo Preview Grid */}
+        {uploadedPhotos.length > 0 && (
+          <div className="grid grid-cols-2 gap-4">
+            {uploadedPhotos.map((photo, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={photo}
+                  alt={`Profile photo ${index + 1}`}
+                  className="w-full h-32 object-cover rounded-lg"
+                />
+                <button
+                  onClick={() => removePhoto(photo, index)}
+                  className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                {index === 0 && (
+                  <div className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                    Primary
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground text-center">
+          Photos are automatically checked for policy violations. Fake or inappropriate photos will be removed.
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderStep5 = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
         <h2 className="text-2xl font-bold mb-2">Tell Your Story</h2>
         <p className="text-muted-foreground">Share what makes you unique</p>
       </div>
@@ -310,6 +510,7 @@ export const Onboarding = ({ currentMember, onComplete }: OnboardingProps) => {
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === 4 && renderStep4()}
+        {step === 5 && renderStep5()}
 
         <div className="flex gap-3 mt-8">
           {step > 1 && (

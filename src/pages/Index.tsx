@@ -94,10 +94,10 @@ const Index = () => {
     
     if (data) {
       setCurrentMember(data);
-      // Check if profile needs completion - check for essential fields
+      // Check if profile needs completion - require all essential fields
       const needsCompletion = !data.about_me || !data.reasons || 
-                             data.relationship_status === 'single' && 
-                             (!data.professionalism || data.professionalism === 'employed');
+                             !data.relationship_status || !data.professionalism ||
+                             !data.education_level || !data.height || !data.weight;
       if (needsCompletion) {
         setShowOnboarding(true);
       }
@@ -131,7 +131,7 @@ const Index = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <Heart className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse fill-current" />
-          <p className="text-muted-foreground">Loading TrueHear...</p>
+          <p className="text-muted-foreground">Loading TrueHearted...</p>
         </div>
       </div>
     );
@@ -339,7 +339,7 @@ const Index = () => {
       <header className="bg-background border-b border-border p-4 safe-area-pt">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            TrueHear
+            TrueHearted
           </h1>
           <Button
             variant="ghost"
