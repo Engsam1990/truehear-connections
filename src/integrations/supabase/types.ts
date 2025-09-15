@@ -14,7 +14,251 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      img_links: {
+        Row: {
+          created_at: string
+          id: string
+          img_id: string
+          is_primary: boolean
+          member_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          img_id: string
+          is_primary?: boolean
+          member_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          img_id?: string
+          is_primary?: boolean
+          member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "img_links_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      likes: {
+        Row: {
+          created_at: string
+          id: string
+          like_type: string
+          sent_from: string
+          sent_to: string
+          timestamp: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          like_type?: string
+          sent_from: string
+          sent_to: string
+          timestamp?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          like_type?: string
+          sent_from?: string
+          sent_to?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_sent_from_fkey"
+            columns: ["sent_from"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_sent_to_fkey"
+            columns: ["sent_to"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      members: {
+        Row: {
+          about_me: string | null
+          alcoholism: string
+          birthdate: string
+          confirmation_code: string
+          confirmed: string
+          created_at: string
+          education_level: string
+          email: string
+          entry_date: string
+          gender: string
+          get_news: string
+          having_kid: string
+          height: string
+          id: string
+          last_activity: string
+          location: string
+          member_id: number
+          name: string
+          need_kids: string
+          password: string
+          preferred_age_from: string
+          preferred_age_to: string
+          professionalism: string
+          reasons: string
+          relationship_status: string
+          remember_token: string
+          reset_expires: string | null
+          reset_token: string | null
+          smoker: string
+          status: string
+          subscribed_at: string | null
+          subscription: string
+          subscription_id: string | null
+          updated_at: string
+          user_id: string | null
+          weight: string
+        }
+        Insert: {
+          about_me?: string | null
+          alcoholism: string
+          birthdate: string
+          confirmation_code: string
+          confirmed?: string
+          created_at?: string
+          education_level: string
+          email: string
+          entry_date?: string
+          gender: string
+          get_news?: string
+          having_kid: string
+          height: string
+          id?: string
+          last_activity?: string
+          location: string
+          member_id?: number
+          name: string
+          need_kids: string
+          password: string
+          preferred_age_from: string
+          preferred_age_to: string
+          professionalism: string
+          reasons: string
+          relationship_status: string
+          remember_token?: string
+          reset_expires?: string | null
+          reset_token?: string | null
+          smoker: string
+          status?: string
+          subscribed_at?: string | null
+          subscription?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          weight: string
+        }
+        Update: {
+          about_me?: string | null
+          alcoholism?: string
+          birthdate?: string
+          confirmation_code?: string
+          confirmed?: string
+          created_at?: string
+          education_level?: string
+          email?: string
+          entry_date?: string
+          gender?: string
+          get_news?: string
+          having_kid?: string
+          height?: string
+          id?: string
+          last_activity?: string
+          location?: string
+          member_id?: number
+          name?: string
+          need_kids?: string
+          password?: string
+          preferred_age_from?: string
+          preferred_age_to?: string
+          professionalism?: string
+          reasons?: string
+          relationship_status?: string
+          remember_token?: string
+          reset_expires?: string | null
+          reset_token?: string | null
+          smoker?: string
+          status?: string
+          subscribed_at?: string | null
+          subscription?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          weight?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          chat_id: string
+          created_at: string
+          delivered_at: string | null
+          edited_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          receiver_id: string
+          sender_id: string
+          timestamp: string | null
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          delivered_at?: string | null
+          edited_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          receiver_id: string
+          sender_id: string
+          timestamp?: string | null
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          delivered_at?: string | null
+          edited_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          receiver_id?: string
+          sender_id?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
