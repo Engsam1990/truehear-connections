@@ -94,8 +94,11 @@ const Index = () => {
     
     if (data) {
       setCurrentMember(data);
-      // Check if profile needs completion
-      if (!data.about_me || !data.reasons || !data.relationship_status) {
+      // Check if profile needs completion - check for essential fields
+      const needsCompletion = !data.about_me || !data.reasons || 
+                             data.relationship_status === 'single' && 
+                             (!data.professionalism || data.professionalism === 'employed');
+      if (needsCompletion) {
         setShowOnboarding(true);
       }
     }
@@ -320,7 +323,10 @@ const Index = () => {
           </div>
         </div>
         
-        <Button className="w-full mt-6 bg-gradient-to-r from-primary to-accent">
+        <Button 
+          className="w-full mt-6 bg-gradient-to-r from-primary to-accent"
+          onClick={() => setShowOnboarding(true)}
+        >
           Complete Profile
         </Button>
       </Card>
