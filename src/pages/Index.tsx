@@ -4,6 +4,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { MatchModal } from "@/components/MatchModal";
 import { ChatList } from "@/components/ChatList";
 import { AuthPage } from "@/components/AuthPage";
+import { Onboarding } from "@/components/Onboarding";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Heart, Sparkles, Users, MessageSquare, LogOut } from "lucide-react";
@@ -69,6 +70,7 @@ const Index = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [chats, setChats] = useState<any[]>([]);
   const [currentMember, setCurrentMember] = useState<any>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { toast } = useToast();
   const { user, session, loading, signOut } = useAuth();
 
@@ -92,6 +94,10 @@ const Index = () => {
     
     if (data) {
       setCurrentMember(data);
+      // Check if profile needs completion
+      if (!data.about_me || !data.reasons || !data.relationship_status) {
+        setShowOnboarding(true);
+      }
     }
   };
 
@@ -130,6 +136,18 @@ const Index = () => {
 
   if (!user) {
     return <AuthPage onAuthSuccess={() => window.location.reload()} />;
+  }
+
+  if (showOnboarding) {
+    return (
+      <Onboarding 
+        currentMember={currentMember}
+        onComplete={() => {
+          setShowOnboarding(false);
+          fetchCurrentMember(); // Refresh member data
+        }}
+      />
+    );
   }
 
   const handleLike = async (profileId: string) => {
