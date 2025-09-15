@@ -3,10 +3,13 @@ import { ProfileCard } from "@/components/ProfileCard";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { MatchModal } from "@/components/MatchModal";
 import { ChatList } from "@/components/ChatList";
+import { AuthPage } from "@/components/AuthPage";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Heart, Sparkles, Users, MessageSquare } from "lucide-react";
+import { Heart, Sparkles, Users, MessageSquare, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock data - will be replaced with actual database calls
 const mockProfiles = [
@@ -63,32 +66,114 @@ const Index = () => {
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [matchedUser, setMatchedUser] = useState<any>(null);
-  const [profiles, setProfiles] = useState(mockProfiles);
-  const [chats, setChats] = useState(mockChats);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [chats, setChats] = useState<any[]>([]);
+  const [currentMember, setCurrentMember] = useState<any>(null);
   const { toast } = useToast();
+  const { user, session, loading, signOut } = useAuth();
 
-  const handleLike = (profileId: number) => {
+  // Fetch user's member profile
+  useEffect(() => {
+    if (user) {
+      fetchCurrentMember();
+      fetchProfiles();
+      fetchChats();
+    }
+  }, [user]);
+
+  const fetchCurrentMember = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('members')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (data) {
+      setCurrentMember(data);
+    }
+  };
+
+  const fetchProfiles = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('members')
+      .select('*')
+      .neq('user_id', user.id)
+      .limit(10);
+    
+    if (data) {
+      setProfiles(data);
+    }
+  };
+
+  const fetchChats = async () => {
+    if (!currentMember) return;
+    
+    // For now, use mock data - will implement real chat functionality later
+    setChats(mockChats);
+  };
+
+  // Show auth page if not logged in
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Heart className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse fill-current" />
+          <p className="text-muted-foreground">Loading TrueHear...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthPage onAuthSuccess={() => window.location.reload()} />;
+  }
+
+  const handleLike = async (profileId: string) => {
+    if (!currentMember) return;
+    
     const profile = profiles[currentProfileIndex];
     
-    // Simulate a match (50% chance for demo)
-    const isMatch = Math.random() > 0.5;
+    // Send like to database
+    const { error } = await supabase
+      .from('likes')
+      .insert({
+        sent_from: currentMember.id,
+        sent_to: profileId,
+        like_type: 'like'
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send like. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    if (isMatch) {
+    // Check if it's a match (they already liked us)
+    const { data: existingLike } = await supabase
+      .from('likes')
+      .select('*')
+      .eq('sent_from', profileId)
+      .eq('sent_to', currentMember.id)
+      .single();
+    
+    if (existingLike) {
       setMatchedUser({
         name: profile.name,
-        image: profile.images[0] || ""
+        image: ""
       });
       setShowMatchModal(true);
       
-      // Add to chats as new match
-      setChats(prev => [
-        ...prev,
-        {
-          id: `match-${profileId}`,
-          user: { id: profileId, name: profile.name, image: profile.images[0] },
-          isNewMatch: true
-        }
-      ]);
+      toast({
+        title: "It's a Match! 💖",
+        description: `You and ${profile.name} liked each other!`,
+      });
     } else {
       toast({
         title: "Like sent! 💕",
@@ -99,7 +184,7 @@ const Index = () => {
     nextProfile();
   };
 
-  const handlePass = (profileId: number) => {
+  const handlePass = (profileId: string) => {
     nextProfile();
   };
 
@@ -228,10 +313,18 @@ const Index = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="bg-background border-b border-border p-4 safe-area-pt">
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             TrueHear
           </h1>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={signOut}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
         </div>
       </header>
 
