@@ -167,11 +167,11 @@ const Index = () => {
       const { data: existingLikes } = await supabase
         .from('likes')
         .select('sent_to')
-        .eq('sent_from', currentMember.id);
+        .eq('sent_from', currentMember.member_id);
       
       const likedMemberIds = existingLikes?.map(like => like.sent_to) || [];
       const filteredProfiles = data.filter(profile => 
-        !likedMemberIds.includes(profile.id)
+        !likedMemberIds.includes(profile.member_id)
       );
       
       setProfiles(filteredProfiles);
@@ -371,7 +371,7 @@ const Index = () => {
     );
   }
 
-  const handleLike = async (profileId: string) => {
+  const handleLike = async (profileId: number) => {
     if (!currentMember) return;
     
     const profile = profiles[currentProfileIndex];
@@ -380,7 +380,7 @@ const Index = () => {
     const { error } = await supabase
       .from('likes')
       .insert({
-        sent_from: currentMember.id,
+        sent_from: currentMember.member_id,
         sent_to: profileId,
         like_type: 'like'
       });
@@ -399,7 +399,7 @@ const Index = () => {
       .from('likes')
       .select('*')
       .eq('sent_from', profileId)
-      .eq('sent_to', currentMember.id)
+      .eq('sent_to', currentMember.member_id)
       .single();
     
     if (existingLike) {
@@ -423,7 +423,7 @@ const Index = () => {
     nextProfile();
   };
 
-  const handlePass = (profileId: string) => {
+  const handlePass = (profileId: number) => {
     nextProfile();
   };
 

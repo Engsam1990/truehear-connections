@@ -159,16 +159,16 @@ KEY CHANGES MADE:
    - user_id: Set to NULL (will be linked after Supabase Auth signup)
 
 2. IMG_LINKS TABLE:
-   - Uses UUID member_id lookups instead of integer references
+   - Uses direct member_id integer values instead of UUID lookups
    - Set first image as primary (is_primary = true)
 
 3. LIKES TABLE:
-   - Uses UUID member_id lookups for sent_from/sent_to
+   - Uses direct member_id integer values for sent_from/sent_to
    - Added timezone to timestamps
    - Set like_type to 'like'
 
 4. MESSAGES TABLE:
-   - Uses UUID member_id lookups for sender_id/receiver_id
+   - Uses direct member_id integer values for sender_id/receiver_id
    - Added timezone to timestamps
    - Set is_read to false
    - Preserved original chat_id and message content
@@ -185,4 +185,5 @@ IMPORTANT:
 - Some likes/messages may fail if referenced member_ids don't exist
 - You'll need to continue converting the remaining members from your MySQL file
 - This covers about 10 members - you have 447 total members to convert
+- All foreign key relationships now use integer member_id values directly
 */

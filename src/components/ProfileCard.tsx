@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 interface ProfileCardProps {
   profile: {
     id: string;
+    member_id: number;
     name: string;
     age?: number;
     birthdate?: string;
@@ -17,8 +18,8 @@ interface ProfileCardProps {
     education?: string;
     education_level?: string;
   };
-  onLike: (id: string) => void;
-  onPass: (id: string) => void;
+  onLike: (member_id: number) => void;
+  onPass: (member_id: number) => void;
 }
 
 export const ProfileCard = ({ profile, onLike, onPass }: ProfileCardProps) => {
@@ -114,7 +115,7 @@ export const ProfileCard = ({ profile, onLike, onPass }: ProfileCardProps) => {
       {/* Action buttons */}
       <div className="flex justify-center gap-4 p-6 pt-2">
         <Button
-          onClick={() => onPass(profile.id)}
+          onClick={() => onPass(profile.member_id)}
           variant="outline"
           size="lg"
           className="rounded-full w-16 h-16 border-2 hover:bg-destructive/10 hover:border-destructive"
@@ -122,7 +123,7 @@ export const ProfileCard = ({ profile, onLike, onPass }: ProfileCardProps) => {
           <X className="w-6 h-6 text-destructive" />
         </Button>
         <Button
-          onClick={() => onLike(profile.id)}
+          onClick={() => onLike(profile.member_id)}
           size="lg"
           className="rounded-full w-16 h-16 bg-gradient-to-r from-primary to-accent hover:shadow-[var(--button-shadow)] transition-all duration-300 transform hover:scale-105"
         >

@@ -20,21 +20,21 @@ export type Database = {
           id: string
           img_id: string
           is_primary: boolean
-          member_id: string
+          member_id: number
         }
         Insert: {
           created_at?: string
           id?: string
           img_id: string
           is_primary?: boolean
-          member_id: string
+          member_id: number
         }
         Update: {
           created_at?: string
           id?: string
           img_id?: string
           is_primary?: boolean
-          member_id?: string
+          member_id?: number
         }
         Relationships: [
           {
@@ -42,7 +42,7 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members"
-            referencedColumns: ["id"]
+            referencedColumns: ["member_id"]
           },
         ]
       }
@@ -51,24 +51,24 @@ export type Database = {
           created_at: string
           id: string
           like_type: string
-          sent_from: string
-          sent_to: string
+          sent_from: number
+          sent_to: number
           timestamp: string
         }
         Insert: {
           created_at?: string
           id?: string
           like_type?: string
-          sent_from: string
-          sent_to: string
+          sent_from: number
+          sent_to: number
           timestamp?: string
         }
         Update: {
           created_at?: string
           id?: string
           like_type?: string
-          sent_from?: string
-          sent_to?: string
+          sent_from?: number
+          sent_to?: number
           timestamp?: string
         }
         Relationships: [
@@ -77,14 +77,14 @@ export type Database = {
             columns: ["sent_from"]
             isOneToOne: false
             referencedRelation: "members"
-            referencedColumns: ["id"]
+            referencedColumns: ["member_id"]
           },
           {
             foreignKeyName: "likes_sent_to_fkey"
             columns: ["sent_to"]
             isOneToOne: false
             referencedRelation: "members"
-            referencedColumns: ["id"]
+            referencedColumns: ["member_id"]
           },
         ]
       }
@@ -214,8 +214,8 @@ export type Database = {
           id: string
           is_read: boolean | null
           message: string
-          receiver_id: string
-          sender_id: string
+          receiver_id: number
+          sender_id: number
           timestamp: string | null
         }
         Insert: {
@@ -226,8 +226,8 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           message: string
-          receiver_id: string
-          sender_id: string
+          receiver_id: number
+          sender_id: number
           timestamp?: string | null
         }
         Update: {
@@ -238,8 +238,8 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           message?: string
-          receiver_id?: string
-          sender_id?: string
+          receiver_id?: number
+          sender_id?: number
           timestamp?: string | null
         }
         Relationships: [
@@ -248,14 +248,14 @@ export type Database = {
             columns: ["receiver_id"]
             isOneToOne: false
             referencedRelation: "members"
-            referencedColumns: ["id"]
+            referencedColumns: ["member_id"]
           },
           {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "members"
-            referencedColumns: ["id"]
+            referencedColumns: ["member_id"]
           },
         ]
       }
