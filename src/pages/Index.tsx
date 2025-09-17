@@ -10,7 +10,6 @@ import { Card } from "@/components/ui/card";
 import { Heart, Sparkles, Users, MessageSquare, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useMemberMapping } from "@/hooks/useMemberMapping";
 import { supabase } from "@/integrations/supabase/client";
 
 // Mock data - will be replaced with actual database calls
@@ -74,27 +73,34 @@ const Index = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { toast } = useToast();
   const { user, session, loading, signOut } = useAuth();
-  const { memberData, loading: memberLoading, createNewMemberProfile } = useMemberMapping(user);
 
   // Fetch user's member profile
   useEffect(() => {
-    if (memberData) {
+    if (user) {
       fetchCurrentMember();
       fetchProfiles();
       fetchChats();
     }
-  }, [memberData]);
+  }, [user]);
 
   const fetchCurrentMember = async () => {
-    if (!memberData) return;
+    if (!user) return;
     
-    setCurrentMember(memberData);
-    // Check if profile needs completion - require all essential fields
-    const needsCompletion = !memberData.about_me || !memberData.reasons || 
-                           !memberData.relationship_status || !memberData.profession ||
-                           !memberData.education_level || !memberData.height || !memberData.weight;
-    if (needsCompletion) {
-      setShowOnboarding(true);
+    const { data, error } = await supabase
+      .from('members')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (data) {
+      setCurrentMember(data);
+      // Check if profile needs completion - require all essential fields
+      const needsCompletion = !data.about_me || !data.reasons || 
+                             !data.relationship_status || !data.professionalism ||
+                             !data.education_level || !data.height || !data.weight;
+      if (needsCompletion) {
+        setShowOnboarding(true);
+      }
     }
   };
 
@@ -120,7 +126,7 @@ const Index = () => {
   };
 
   // Show auth page if not logged in
-  if (loading || memberLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
