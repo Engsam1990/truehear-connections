@@ -99,239 +99,50 @@ INSERT INTO public.members (
 -- ============================================================================
 
 INSERT INTO public.img_links (img_id, member_id, is_primary)
-SELECT 
-    '9458386642218644673_xhuge.webp',
-    m.id,
-    true
-FROM public.members m WHERE m.member_id = 945838664
+VALUES
+('9458386642218644673_xhuge.webp', 945838664, true),
+('4484919002219746965_xhuge.webp', 448491900, true),
 
-UNION ALL SELECT 
-    '4484919002219746965_xhuge.webp',
-    m.id,
-    true
-FROM public.members m WHERE m.member_id = 448491900
-
-UNION ALL SELECT 
-    '1625172932213450333_square_large.jpg',
-    m.id,
-    true
-FROM public.members m WHERE m.member_id = 162517293
-
-UNION ALL SELECT 
-    '8319210312218597148_xhuge.webp',
-    m.id,
-    true
-FROM public.members m WHERE m.member_id = 831921031
-
-UNION ALL SELECT 
-    '6666891852218613254_xhuge.webp',
-    m.id,
-    true
-FROM public.members m WHERE m.member_id = 666689185
-
-UNION ALL SELECT 
-    '74165548900.webp',
-    m.id,
-    true
-FROM public.members m WHERE m.member_id = 741655489
-
-UNION ALL SELECT 
-    '717706734222.jpg',
-    m.id,
-    true
-FROM public.members m WHERE m.member_id = 717706734
-
-UNION ALL SELECT 
-    '49443804833.jpg',
-    m.id,
-    true
-FROM public.members m WHERE m.member_id = 494438048
-
-UNION ALL SELECT 
-    '624016355bn.jpg',
-    m.id,
-    true
-FROM public.members m WHERE m.member_id = 624016355
-
-UNION ALL SELECT 
-    '176787454re.jpg',
-    m.id,
-    true
-FROM public.members m WHERE m.member_id = 176787454;
+('1625172932213450333_square_large.jpg', 162517293, true),
+('8319210312218597148_xhuge.webp', 831921031, true),
+('6666891852218613254_xhuge.webp', 666689185, true),
+('74165548900.webp', 741655489, true),
+('717706734222.jpg', 717706734, true),
+('49443804833.jpg', 494438048, true),
+('624016355bn.jpg', 624016355, true),
+('176787454re.jpg', 176787454, true);
 
 -- ============================================================================
 -- SECTION 3: LIKES TABLE (Actual likes from your data)
 -- ============================================================================
 
 INSERT INTO public.likes (sent_from, sent_to, timestamp, like_type)
--- Like 1: Member 219069568 likes 666689185
-SELECT 
-    m1.id,
-    m2.id,
-    '2024-12-07 12:31:42+00',
-    'like'
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 219069568 AND m2.member_id = 666689185
-
-UNION ALL SELECT 
-    m1.id,
-    m2.id,
-    '2024-12-07 12:31:48+00',
-    'like'
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 219069568 AND m2.member_id = 710551558
-
-UNION ALL SELECT 
-    m1.id,
-    m2.id,
-    '2024-12-07 12:34:39+00',
-    'like'
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 219069568 AND m2.member_id = 101559219
-
-UNION ALL SELECT 
-    m1.id,
-    m2.id,
-    '2024-12-16 07:56:48+00',
-    'like'
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 205659027 AND m2.member_id = 448491900
-
-UNION ALL SELECT 
-    m1.id,
-    m2.id,
-    '2024-12-16 07:56:53+00',
-    'like'
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 205659027 AND m2.member_id = 103329639
-
-UNION ALL SELECT 
-    m1.id,
-    m2.id,
-    '2024-12-16 15:57:46+00',
-    'like'
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 205659027 AND m2.member_id = 140850035
-
-UNION ALL SELECT 
-    m1.id,
-    m2.id,
-    '2024-12-16 15:58:04+00',
-    'like'
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 205659027 AND m2.member_id = 162517293
-
-UNION ALL SELECT 
-    m1.id,
-    m2.id,
-    '2024-12-25 03:46:48+00',
-    'like'
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 769442684 AND m2.member_id = 749242083
-
-UNION ALL SELECT 
-    m1.id,
-    m2.id,
-    '2024-12-25 03:48:26+00',
-    'like'
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 769442684 AND m2.member_id = 494438048;
+VALUES
+(219069568, 666689185, '2024-12-07 12:31:42+00', 'like'),
+(219069568, 710551558, '2024-12-07 12:31:48+00', 'like'),
+(219069568, 101559219, '2024-12-07 12:34:39+00', 'like'),
+(205659027, 448491900, '2024-12-16 07:56:48+00', 'like'),
+(205659027, 103329639, '2024-12-16 07:56:53+00', 'like'),
+(205659027, 140850035, '2024-12-16 15:57:46+00', 'like'),
+(205659027, 162517293, '2024-12-16 15:58:04+00', 'like'),
+(769442684, 749242083, '2024-12-25 03:46:48+00', 'like'),
+(769442684, 494438048, '2024-12-25 03:48:26+00', 'like');
 
 -- ============================================================================
 -- SECTION 4: MESSAGES TABLE (Actual messages from your data)
 -- ============================================================================
 
 INSERT INTO public.messages (message, sender_id, receiver_id, timestamp, chat_id, is_read)
--- Message 1
-SELECT 
-    'Hie ',
-    m1.id,
-    m2.id,
-    '2024-12-07 12:32:38+00',
-    '344577675',
-    false
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 219069568 AND m2.member_id = 125508107
-
-UNION ALL SELECT 
-    'Hie',
-    m1.id,
-    m2.id,
-    '2024-12-07 12:34:14+00',
-    '620355038',
-    false
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 219069568 AND m2.member_id = 401285470
-
-UNION ALL SELECT 
-    'Hie',
-    m1.id,
-    m2.id,
-    '2024-12-07 14:36:35+00',
-    '713507616',
-    false
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 219069568 AND m2.member_id = 494438048
-
-UNION ALL SELECT 
-    'Morning ',
-    m1.id,
-    m2.id,
-    '2024-12-25 03:45:42+00',
-    '871001903',
-    false
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 769442684 AND m2.member_id = 101559219
-
-UNION ALL SELECT 
-    'Hey... Do you mind texting me on WhatsApp 073 147 3016 ',
-    m1.id,
-    m2.id,
-    '2024-12-25 04:02:49+00',
-    '1263880732',
-    false
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 769442684 AND m2.member_id = 494438048
-
-UNION ALL SELECT 
-    'Hi',
-    m1.id,
-    m2.id,
-    '2025-01-04 02:57:23+00',
-    '1011978286',
-    false
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 610692816 AND m2.member_id = 401285470
-
-UNION ALL SELECT 
-    'Heyy ',
-    m1.id,
-    m2.id,
-    '2025-01-30 06:30:25+00',
-    '764449236',
-    false
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 662890017 AND m2.member_id = 101559219
-
-UNION ALL SELECT 
-    'Hi Anitah',
-    m1.id,
-    m2.id,
-    '2025-03-06 06:04:37+00',
-    '1026623388',
-    false
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 284967899 AND m2.member_id = 741655489
-
-UNION ALL SELECT 
-    'Hi',
-    m1.id,
-    m2.id,
-    '2025-03-06 06:09:31+00',
-    '984790131',
-    false
-FROM public.members m1, public.members m2 
-WHERE m1.member_id = 284967899 AND m2.member_id = 699822232;
+VALUES
+('Hie ', 219069568, 125508107, '2024-12-07 12:32:38+00', '344577675', false),
+('Hie', 219069568, 401285470, '2024-12-07 12:34:14+00', '620355038', false),
+('Hie', 219069568, 494438048, '2024-12-07 14:36:35+00', '713507616', false),
+('Morning ', 769442684, 101559219, '2024-12-25 03:45:42+00', '871001903', false),
+('Hey... Do you mind texting me on WhatsApp 073 147 3016 ', 769442684, 494438048, '2024-12-25 04:02:49+00', '1263880732', false),
+('Hi', 610692816, 401285470, '2025-01-04 02:57:23+00', '1011978286', false),
+('Heyy ', 662890017, 101559219, '2025-01-30 06:30:25+00', '764449236', false),
+('Hi Anitah', 284967899, 741655489, '2025-03-06 06:04:37+00', '1026623388', false),
+('Hi', 284967899, 699822232, '2025-03-06 06:09:31+00', '984790131', false);
 
 -- ============================================================================
 -- CONVERSION NOTES:
