@@ -259,12 +259,80 @@ export type Database = {
           },
         ]
       }
+      user_mappings: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          migration_notes: string | null
+          migration_status: string | null
+          supabase_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          migration_notes?: string | null
+          migration_status?: string | null
+          supabase_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          migration_notes?: string | null
+          migration_status?: string | null
+          supabase_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_mappings_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_member: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          about_me: string
+          alcoholism: string
+          birthdate: string
+          created_at: string
+          education_level: string
+          email: string
+          gender: string
+          having_kid: string
+          height: string
+          id: string
+          location: string
+          name: string
+          need_kids: string
+          preferred_age_from: string
+          preferred_age_to: string
+          profession: string
+          reasons: string
+          relationship_status: string
+          smoker: string
+          status: string
+          updated_at: string
+          weight: string
+        }[]
+      }
+      get_member_id_from_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
