@@ -78,10 +78,16 @@ const Index = () => {
   useEffect(() => {
     if (user) {
       fetchCurrentMember();
+    }
+  }, [user]);
+
+  // Fetch profiles and chats after member is loaded
+  useEffect(() => {
+    if (currentMember) {
       fetchProfiles();
       fetchChats();
     }
-  }, [user]);
+  }, [currentMember]);
 
   const fetchCurrentMember = async () => {
     if (!user) return;
@@ -90,7 +96,7 @@ const Index = () => {
       .from('members')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
     
     if (data) {
       setCurrentMember(data);
@@ -101,20 +107,39 @@ const Index = () => {
       if (needsCompletion) {
         setShowOnboarding(true);
       }
+    } else if (!error) {
+      // User doesn't have a member profile yet - show onboarding
+      setShowOnboarding(true);
     }
   };
 
   const fetchProfiles = async () => {
-    if (!user) return;
+    if (!currentMember) return;
     
+    // Get members that match age preferences and haven't been liked/passed yet
     const { data, error } = await supabase
       .from('members')
-      .select('*')
-      .neq('user_id', user.id)
+      .select(`
+        *,
+        img_links(img_id, is_primary)
+      `)
+      .neq('id', currentMember.id)
+      .eq('status', 'active')
       .limit(10);
     
     if (data) {
-      setProfiles(data);
+      // Filter out members we've already interacted with
+      const { data: existingLikes } = await supabase
+        .from('likes')
+        .select('sent_to')
+        .eq('sent_from', currentMember.id);
+      
+      const likedMemberIds = existingLikes?.map(like => like.sent_to) || [];
+      const filteredProfiles = data.filter(profile => 
+        !likedMemberIds.includes(profile.id)
+      );
+      
+      setProfiles(filteredProfiles);
     }
   };
 
@@ -260,7 +285,13 @@ const Index = () => {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <ProfileCard
-          profile={profiles[currentProfileIndex]}
+          profile={{
+            ...profiles[currentProfileIndex],
+            age: profiles[currentProfileIndex].birthdate ? 
+              new Date().getFullYear() - new Date(profiles[currentProfileIndex].birthdate).getFullYear() : 
+              25,
+            images: profiles[currentProfileIndex].img_links?.map(img => img.img_id) || []
+          }}
           onLike={handleLike}
           onPass={handlePass}
         />
