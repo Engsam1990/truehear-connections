@@ -71,8 +71,17 @@ const Index = () => {
   const [chats, setChats] = useState<any[]>([]);
   const [currentMember, setCurrentMember] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [previewProfiles, setPreviewProfiles] = useState<any[]>([]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { toast } = useToast();
   const { user, session, loading, signOut } = useAuth();
+
+  // Fetch preview profiles for unauthenticated users
+  useEffect(() => {
+    if (!user) {
+      fetchPreviewProfiles();
+    }
+  }, [user]);
 
   // Fetch user's member profile
   useEffect(() => {
@@ -88,6 +97,32 @@ const Index = () => {
       fetchChats();
     }
   }, [currentMember]);
+
+  const fetchPreviewProfiles = async () => {
+    const { data, error } = await supabase
+      .from('members')
+      .select(`
+        id,
+        name,
+        birthdate,
+        location,
+        about_me,
+        professionalism,
+        img_links(img_id, is_primary)
+      `)
+      .eq('status', 'active')
+      .limit(6);
+    
+    if (data) {
+      const profilesWithAge = data.map(profile => ({
+        ...profile,
+        age: profile.birthdate ? 
+          new Date().getFullYear() - new Date(profile.birthdate).getFullYear() : 25,
+        images: profile.img_links?.map(img => img.img_id) || []
+      }));
+      setPreviewProfiles(profilesWithAge);
+    }
+  };
 
   const fetchCurrentMember = async () => {
     if (!user) return;
@@ -163,7 +198,165 @@ const Index = () => {
   }
 
   if (!user) {
-    return <AuthPage onAuthSuccess={() => window.location.reload()} />;
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Hero Section */}
+        <div className="relative bg-gradient-to-br from-love-pink to-love-orange min-h-screen flex flex-col">
+          {/* Header */}
+          <header className="p-6 flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-white">TrueHearted</h1>
+            <Button
+              variant="outline"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              onClick={() => setShowAuthModal(true)}
+            >
+              Sign In
+            </Button>
+          </header>
+
+          {/* Hero Content */}
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="text-center text-white max-w-2xl">
+              <Heart className="w-20 h-20 mx-auto mb-6 fill-current animate-pulse" />
+              <h2 className="text-5xl font-bold mb-4">Find Your True Match</h2>
+              <p className="text-xl mb-8 text-white/90">
+                Connect with genuine people looking for meaningful relationships in your area
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  size="lg"
+                  className="bg-white text-love-pink hover:bg-white/90 text-lg px-8 py-4"
+                  onClick={() => setShowAuthModal(true)}
+                >
+                  <Heart className="w-5 h-5 mr-2" />
+                  Start Dating Now
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-white/30 text-white hover:bg-white/10 text-lg px-8 py-4"
+                  onClick={() => {
+                    document.getElementById('preview-section')?.scrollIntoView({ 
+                      behavior: 'smooth' 
+                    });
+                  }}
+                >
+                  See Who's Here
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Preview Section */}
+        <section id="preview-section" className="py-16 px-6 bg-background">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h3 className="text-3xl font-bold mb-4">Meet Amazing People Near You</h3>
+              <p className="text-muted-foreground text-lg">
+                Join thousands of singles who found love on TrueHearted
+              </p>
+            </div>
+
+            {/* Member Preview Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {previewProfiles.map((profile, index) => (
+                <Card key={profile.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                  <div className="aspect-[3/4] bg-gradient-to-br from-love-soft to-love-pink/20 flex items-center justify-center">
+                    {profile.images.length > 0 ? (
+                      <div className="w-full h-full bg-love-pink/10 flex items-center justify-center">
+                        <Sparkles className="w-12 h-12 text-love-pink" />
+                      </div>
+                    ) : (
+                      <div className="text-6xl font-bold text-love-pink">
+                        {profile.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h4 className="font-bold text-lg">{profile.name}, {profile.age}</h4>
+                    <p className="text-muted-foreground text-sm mb-2">📍 {profile.location}</p>
+                    <p className="text-sm line-clamp-2">{profile.professionalism}</p>
+                  </div>
+                  {/* Blur overlay for unauthenticated users */}
+                  <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                    <Button
+                      className="bg-gradient-to-r from-love-pink to-love-orange text-white"
+                      onClick={() => setShowAuthModal(true)}
+                    >
+                      <Heart className="w-4 h-4 mr-2" />
+                      View Profile
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Features Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-love-pink to-love-orange rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Heart className="w-8 h-8 text-white fill-current" />
+                </div>
+                <h4 className="font-bold mb-2">Smart Matching</h4>
+                <p className="text-muted-foreground">Our algorithm finds your perfect match based on compatibility</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-love-pink to-love-orange rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="font-bold mb-2">Meaningful Conversations</h4>
+                <p className="text-muted-foreground">Chat with verified users looking for genuine connections</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-love-pink to-love-orange rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="font-bold mb-2">Safe Community</h4>
+                <p className="text-muted-foreground">Join a verified community of singles in your area</p>
+              </div>
+            </div>
+
+            {/* CTA Section */}
+            <div className="text-center bg-gradient-to-r from-love-pink to-love-orange rounded-2xl p-8 text-white">
+              <h3 className="text-2xl font-bold mb-4">Ready to Find Love?</h3>
+              <p className="mb-6 text-white/90">Join TrueHearted today and start your journey to meaningful connections</p>
+              <Button
+                size="lg"
+                className="bg-white text-love-pink hover:bg-white/90"
+                onClick={() => setShowAuthModal(true)}
+              >
+                Create Free Account
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Auth Modal */}
+        {showAuthModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-background rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-4 border-b flex justify-between items-center">
+                <h3 className="font-bold text-lg">Join TrueHearted</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAuthModal(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+              <div className="p-4">
+                <AuthPage onAuthSuccess={() => {
+                  setShowAuthModal(false);
+                  window.location.reload();
+                }} />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (showOnboarding) {
