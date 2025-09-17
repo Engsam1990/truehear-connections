@@ -258,34 +258,34 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Member Preview Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
               {previewProfiles.map((profile, index) => (
-                <Card key={profile.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <Card key={profile.id} className="relative overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                   <div className="aspect-[3/4] bg-gradient-to-br from-love-soft to-love-pink/20 flex items-center justify-center">
                     {profile.images.length > 0 ? (
                       <div className="w-full h-full bg-love-pink/10 flex items-center justify-center">
-                        <Sparkles className="w-12 h-12 text-love-pink" />
+                        <Sparkles className="w-8 h-8 text-love-pink" />
                       </div>
                     ) : (
-                      <div className="text-6xl font-bold text-love-pink">
+                      <div className="text-4xl font-bold text-love-pink">
                         {profile.name.charAt(0)}
                       </div>
                     )}
                   </div>
-                  <div className="p-4">
-                    <h4 className="font-bold text-lg">{profile.name}, {profile.age}</h4>
-                    <p className="text-muted-foreground text-sm mb-2">📍 {profile.location}</p>
-                    <p className="text-sm line-clamp-2">{profile.professionalism}</p>
+                  <div className="p-3">
+                    <h4 className="font-bold text-sm">{profile.name}, {profile.age}</h4>
+                    <p className="text-muted-foreground text-xs mb-1">📍 {profile.location}</p>
+                    <p className="text-xs line-clamp-1">{profile.professionalism}</p>
                   </div>
                   {/* Blur overlay for unauthenticated users */}
                   <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
                     <Button
-                      className="bg-gradient-to-r from-love-pink to-love-orange text-white"
+                      size="sm"
+                      className="bg-gradient-to-r from-love-pink to-love-orange text-white text-xs"
                       onClick={() => setShowAuthModal(true)}
                     >
-                      <Heart className="w-4 h-4 mr-2" />
-                      View Profile
+                      <Heart className="w-3 h-3 mr-1" />
+                      View
                     </Button>
                   </div>
                 </Card>

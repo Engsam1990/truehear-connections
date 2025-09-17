@@ -59,7 +59,7 @@ export const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
 
       toast({
         title: "Welcome back! 💕",
-        description: "Successfully logged in to TrueHear",
+        description: "Successfully logged in to TrueHearted",
       });
       onAuthSuccess();
     } catch (error: any) {
@@ -136,7 +136,7 @@ export const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
       }
 
       toast({
-        title: "Welcome to TrueHear! 💖",
+        title: "Welcome to TrueHearted! 💖",
         description: "Your account has been created successfully",
       });
       onAuthSuccess();
@@ -159,7 +159,7 @@ export const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
           <div className="flex items-center justify-center mb-4">
             <Heart className="w-8 h-8 text-primary mr-2 fill-current" />
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              TrueHear
+              TrueHearted
             </h1>
           </div>
           <p className="text-muted-foreground">
