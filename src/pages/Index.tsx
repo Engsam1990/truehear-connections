@@ -113,10 +113,10 @@ const Index = () => {
         professionalism,
         img_links(img_id, is_primary)
       `)
-      .eq('status', 'active')
+      .not('status', 'is', null)  // Get members with any status
       .limit(6);
     
-    if (data) {
+    if (data && data.length > 0) {
       const profilesWithAge = data.map(profile => ({
         ...profile,
         age: profile.birthdate ? 
@@ -124,6 +124,29 @@ const Index = () => {
         images: profile.img_links?.map(img => img.img_id) || []
       }));
       setPreviewProfiles(profilesWithAge);
+    } else {
+      // Fallback to show some profiles even if status filter doesn't work
+      const { data: fallbackData } = await supabase
+        .from('members')
+        .select(`
+          id,
+          name,
+          birthdate,
+          location,
+          about_me,
+          professionalism
+        `)
+        .limit(6);
+      
+      if (fallbackData) {
+        const profilesWithAge = fallbackData.map(profile => ({
+          ...profile,
+          age: profile.birthdate ? 
+            new Date().getFullYear() - new Date(profile.birthdate).getFullYear() : 25,
+          images: []
+        }));
+        setPreviewProfiles(profilesWithAge);
+      }
     }
   };
 
@@ -153,7 +176,7 @@ const Index = () => {
   const fetchProfiles = async () => {
     if (!currentMember) return;
     
-    // Get members - if profile incomplete, show unfiltered matches
+    // Get members - show all available profiles since imported data may not have proper filtering setup
     let query = supabase
       .from('members')
       .select(`
@@ -161,34 +184,29 @@ const Index = () => {
         img_links(img_id, is_primary)
       `)
       .neq('id', currentMember.id)
-      .eq('status', 'active');
+      .limit(10);
 
-    // If profile is complete, apply age filtering
-    if (!profileIncomplete && currentMember.preferred_age_from && currentMember.preferred_age_to) {
-      const currentYear = new Date().getFullYear();
-      const minBirthYear = currentYear - parseInt(currentMember.preferred_age_to);
-      const maxBirthYear = currentYear - parseInt(currentMember.preferred_age_from);
-      
-      query = query
-        .gte('birthdate', `${minBirthYear}-01-01`)
-        .lte('birthdate', `${maxBirthYear}-12-31`);
-    }
-    
-    const { data, error } = await query.limit(10);
+    const { data, error } = await query;
     
     if (data) {
-      // Filter out members we've already interacted with
-      const { data: existingLikes } = await supabase
-        .from('likes')
-        .select('sent_to')
-        .eq('sent_from', currentMember.member_id);
-      
-      const likedMemberIds = existingLikes?.map(like => like.sent_to) || [];
-      const filteredProfiles = data.filter(profile => 
-        !likedMemberIds.includes(profile.member_id)
-      );
-      
-      setProfiles(filteredProfiles);
+      // For imported data, we'll show all profiles since RLS filtering might not work properly
+      // Filter out members we've already interacted with if the likes table is accessible
+      try {
+        const { data: existingLikes } = await supabase
+          .from('likes')
+          .select('sent_to')
+          .eq('sent_from', currentMember.member_id);
+        
+        const likedMemberIds = existingLikes?.map(like => like.sent_to) || [];
+        const filteredProfiles = data.filter(profile => 
+          !likedMemberIds.includes(profile.member_id)
+        );
+        
+        setProfiles(filteredProfiles);
+      } catch (likesError) {
+        // If likes query fails due to RLS, just show all profiles
+        setProfiles(data);
+      }
     }
   };
 
@@ -248,7 +266,7 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-white/30 text-white hover:bg-white/10 text-lg px-8 py-4"
+                  className="border-white/30 text-white hover:bg-white/10 hover:text-white text-lg px-8 py-4"
                   onClick={() => {
                     document.getElementById('preview-section')?.scrollIntoView({ 
                       behavior: 'smooth' 
