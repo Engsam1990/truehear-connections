@@ -44,12 +44,12 @@ export function DiscoverPage({ currentMember, profileIncomplete }: DiscoverPageP
         .eq('status', 'active')
         .neq('id', currentMember.id);
 
-      // Filter by completed profiles only
+      // Filter by users with minimal required data
       query = query
-        .not('about_me', 'is', null)
         .not('reasons', 'is', null)
-        .neq('about_me', '')
-        .neq('reasons', '');
+        .neq('reasons', '')
+        .not('relationship_status', 'is', null)
+        .neq('relationship_status', '');
 
       if (currentMember.gender && currentMember.gender !== 'prefer_not_to_say') {
         // Show opposite gender

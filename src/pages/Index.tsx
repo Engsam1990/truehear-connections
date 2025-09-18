@@ -176,8 +176,7 @@ const Index = () => {
       if (updatedMember) {
         setCurrentMember(updatedMember);
         const needsCompletion = !updatedMember.reasons || 
-                               !updatedMember.relationship_status ||
-                               !updatedMember.height || !updatedMember.weight;
+                               !updatedMember.relationship_status;
         setProfileIncomplete(needsCompletion);
         return;
       }
@@ -241,10 +240,9 @@ const Index = () => {
     
     if (data) {
       setCurrentMember(data);
-      // Check if profile needs completion - optional fields for better matches
+      // Check if profile needs completion - only essential fields required
       const needsCompletion = !data.reasons || 
-                             !data.relationship_status ||
-                             !data.height || !data.weight;
+                             !data.relationship_status;
       setProfileIncomplete(needsCompletion);
       // Profile completion is completely optional - never force onboarding
     } else if (!error) {
