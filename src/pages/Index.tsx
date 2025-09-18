@@ -8,7 +8,7 @@ import { Onboarding } from "@/components/Onboarding";
 import { ProfileCompletionAlert } from "@/components/ProfileCompletionAlert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Heart, Sparkles, Users, MessageSquare, LogOut, User } from "lucide-react";
+import { Heart, Sparkles, Users, MessageSquare, LogOut, User, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,13 +69,15 @@ const Index = () => {
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [matchedUser, setMatchedUser] = useState<any>(null);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [profilesOffset, setProfilesOffset] = useState(0);
+  const [hasMoreProfiles, setHasMoreProfiles] = useState(true);
   const [chats, setChats] = useState<any[]>([]);
   const [currentMember, setCurrentMember] = useState<any>(null);
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [previewProfiles, setPreviewProfiles] = useState<any[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileAlert, setShowProfileAlert] = useState(false);
-  const [profileIncomplete, setProfileIncomplete] = useState(false);
   const { toast } = useToast();
   const { user, session, loading, signOut } = useAuth();
 
@@ -96,7 +98,8 @@ const Index = () => {
   // Fetch profiles and chats after member is loaded
   useEffect(() => {
     if (currentMember) {
-      fetchProfiles();
+      fetchProfiles(0, false);
+      setProfilesOffset(0);
       fetchChats();
     }
   }, [currentMember]);
@@ -173,18 +176,18 @@ const Index = () => {
     }
   };
 
-  const fetchProfiles = async () => {
+  const fetchProfiles = async (offset = 0, append = false) => {
     if (!currentMember) return;
     
     // Get members - show all available profiles since imported data may not have proper filtering setup
     let query = supabase
       .from('members')
       .select(`
-        *,
+        *, 
         img_links(img_id, is_primary)
       `)
       .neq('id', currentMember.id)
-      .limit(20);
+      .range(offset, offset + 19); // Load 20 at a time
 
     const { data, error } = await query;
     
@@ -202,12 +205,29 @@ const Index = () => {
           !likedMemberIds.includes(profile.member_id)
         );
         
-        setProfiles(filteredProfiles);
+        if (append) {
+          setProfiles(prev => [...prev, ...filteredProfiles]);
+        } else {
+          setProfiles(filteredProfiles);
+        }
+        
+        setHasMoreProfiles(data.length === 20); // If we got 20, there might be more
       } catch (likesError) {
         // If likes query fails due to RLS, just show all profiles
-        setProfiles(data);
+        if (append) {
+          setProfiles(prev => [...prev, ...data]);
+        } else {
+          setProfiles(data);
+        }
+        setHasMoreProfiles(data.length === 20);
       }
     }
+  };
+
+  const loadMoreProfiles = () => {
+    const newOffset = profilesOffset + 20;
+    setProfilesOffset(newOffset);
+    fetchProfiles(newOffset, true);
   };
 
   const fetchChats = async () => {
@@ -487,39 +507,57 @@ const Index = () => {
   };
 
   const renderDiscoverTab = () => {
-    if (profiles.length === 0 || currentProfileIndex >= profiles.length) {
+    if (profiles.length === 0) {
       return (
         <div className="flex-1 flex items-center justify-center p-8">
           <Card className="p-8 text-center max-w-sm">
             <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">No more profiles</h3>
+            <h3 className="text-xl font-bold mb-2">No profiles available</h3>
             <p className="text-muted-foreground mb-4">
-              You've seen everyone in your area. Check back later for new profiles!
+              Check back later for new profiles in your area!
             </p>
-            <Button 
-              onClick={() => setCurrentProfileIndex(0)}
-              className="bg-gradient-to-r from-primary to-accent"
-            >
-              Review profiles again
-            </Button>
           </Card>
         </div>
       );
     }
 
     return (
-      <div className="flex-1 flex items-center justify-center p-4">
-        <ProfileCard
-          profile={{
-            ...profiles[currentProfileIndex],
-            age: profiles[currentProfileIndex].birthdate ? 
-              new Date().getFullYear() - new Date(profiles[currentProfileIndex].birthdate).getFullYear() : 
-              25,
-            images: profiles[currentProfileIndex].img_links?.map(img => img.img_id) || []
-          }}
-          onLike={handleLike}
-          onPass={handlePass}
-        />
+      <div className="p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold mb-2">Discover New People</h2>
+            <p className="text-muted-foreground">
+              Find your perfect match from {profiles.length} available profiles
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {profiles.map((profile) => (
+              <ProfileCard
+                key={profile.id}
+                profile={profile}
+                onLike={() => handleLike(profile.member_id)}
+                onPass={() => handlePass(profile.member_id)}
+                currentMember={currentMember}
+                isProfileIncomplete={profileIncomplete}
+              />
+            ))}
+          </div>
+
+          {hasMoreProfiles && profiles.length > 0 && (
+            <div className="flex justify-center mt-8">
+              <Button
+                onClick={loadMoreProfiles}
+                variant="outline"
+                size="lg"
+                className="flex items-center gap-2"
+              >
+                <ChevronDown className="w-4 h-4" />
+                View More
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -662,21 +700,19 @@ const Index = () => {
       {/* Profile Completion Alert */}
       {profileIncomplete && currentMember && (
         <ProfileCompletionAlert
-          currentMember={currentMember}
-          onCompleteProfile={() => setShowOnboarding(true)}
+          isIncomplete={profileIncomplete}
+          onProfileClick={() => setShowOnboarding(true)}
         />
       )}
 
       {/* Profile Access Alert Modal */}
       {showProfileAlert && (
         <ProfileCompletionAlert
-          currentMember={currentMember}
-          onCompleteProfile={() => {
+          isIncomplete={profileIncomplete}
+          onProfileClick={() => {
             setShowProfileAlert(false);
             setShowOnboarding(true);
           }}
-          showInModal={true}
-          onClose={() => setShowProfileAlert(false)}
         />
       )}
 

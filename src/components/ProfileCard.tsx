@@ -1,135 +1,113 @@
-import { useState } from "react";
-import { Heart, X, MapPin, Calendar } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Heart, X, MessageCircle, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface ProfileCardProps {
-  profile: {
-    id: string;
-    member_id: number;
-    name: string;
-    age?: number;
-    birthdate?: string;
-    location: string;
-    about_me?: string;
-    images?: string[];
-    profession?: string;
-    professionalism?: string;
-    education?: string;
-    education_level?: string;
-  };
-  onLike: (member_id: number) => void;
-  onPass: (member_id: number) => void;
+  profile: any;
+  onLike: () => void;
+  onPass: () => void;
+  currentMember?: any;
+  isProfileIncomplete?: boolean;
 }
 
-export const ProfileCard = ({ profile, onLike, onPass }: ProfileCardProps) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  const images = profile.images || [];
-  const age = profile.age || (profile.birthdate ? new Date().getFullYear() - new Date(profile.birthdate).getFullYear() : 0);
-  const profession = profile.profession || profile.professionalism || '';
-  const education = profile.education || profile.education_level || '';
+export function ProfileCard({ profile, onLike, onPass, currentMember, isProfileIncomplete }: ProfileCardProps) {
+  const age = profile.birthdate ? 
+    new Date().getFullYear() - new Date(profile.birthdate).getFullYear() : 25;
 
-  const nextImage = () => {
-    if (images.length > 0) {
-      setCurrentImageIndex((prev) => 
-        prev < images.length - 1 ? prev + 1 : 0
-      );
+  const handleCardClick = () => {
+    if (isProfileIncomplete) {
+      toast.error("Complete your profile to view other profiles", {
+        description: "Get better matches by completing your registration",
+        action: {
+          label: "Complete Profile",
+          onClick: () => window.location.href = "/profile"
+        }
+      });
+      return;
     }
+    // TODO: Navigate to full profile view
   };
 
-  const prevImage = () => {
-    if (images.length > 0) {
-      setCurrentImageIndex((prev) => 
-        prev > 0 ? prev - 1 : images.length - 1
-      );
+  const handleMessage = () => {
+    if (isProfileIncomplete) {
+      toast.error("Complete your profile to send messages", {
+        description: "Get better matches by completing your registration",
+        action: {
+          label: "Complete Profile", 
+          onClick: () => window.location.href = "/profile"
+        }
+      });
+      return;
     }
+    // TODO: Open message compose
   };
 
   return (
-    <Card className="w-full max-w-sm mx-auto bg-card shadow-[var(--card-shadow)] overflow-hidden">
-      <div className="relative h-96 bg-gradient-to-br from-love-soft to-background">
-        {images.length > 0 && images[currentImageIndex] ? (
-          <img
-            src={images[currentImageIndex]}
-            alt={`${profile.name}'s photo`}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-accent text-primary-foreground text-6xl font-bold">
-            {profile.name.charAt(0)}
-          </div>
-        )}
-        
-        {/* Image navigation */}
-        {images.length > 1 && (
-          <div className="absolute inset-0 flex">
-            <button
-              onClick={prevImage}
-              className="w-1/2 h-full opacity-0 hover:opacity-10 bg-gradient-to-r from-black transition-opacity"
-            />
-            <button
-              onClick={nextImage}
-              className="w-1/2 h-full opacity-0 hover:opacity-10 bg-gradient-to-l from-black transition-opacity"
-            />
-          </div>
-        )}
-
-        {/* Image indicators */}
-        {images.length > 1 && (
-          <div className="absolute top-4 left-4 right-4 flex space-x-1">
-            {images.map((_, index) => (
-              <div
-                key={index}
-                className={`h-1 flex-1 rounded-full ${
-                  index === currentImageIndex ? "bg-white" : "bg-white/30"
-                }`}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Profile info overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
-          <h2 className="text-2xl font-bold mb-1">
-            {profile.name}{age > 0 && `, ${age}`}
-          </h2>
-          <div className="flex items-center gap-1 text-sm opacity-90 mb-2">
-            <MapPin className="w-4 h-4" />
-            {profile.location}
-          </div>
-          {profession && <p className="text-sm opacity-80 mb-1">{profession}</p>}
-          {education && <p className="text-xs opacity-70">{education}</p>}
-        </div>
-      </div>
-
-      {/* About section */}
-      {profile.about_me && (
-        <div className="p-4">
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {profile.about_me}
-          </p>
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer relative">
+      {isProfileIncomplete && (
+        <div className="absolute top-2 right-2 z-10">
+          <AlertCircle className="w-4 h-4 text-yellow-500" />
         </div>
       )}
-
-      {/* Action buttons */}
-      <div className="flex justify-center gap-4 p-6 pt-2">
-        <Button
-          onClick={() => onPass(profile.member_id)}
-          variant="outline"
-          size="lg"
-          className="rounded-full w-16 h-16 border-2 hover:bg-destructive/10 hover:border-destructive"
-        >
-          <X className="w-6 h-6 text-destructive" />
-        </Button>
-        <Button
-          onClick={() => onLike(profile.member_id)}
-          size="lg"
-          className="rounded-full w-16 h-16 bg-gradient-to-r from-primary to-accent hover:shadow-[var(--button-shadow)] transition-all duration-300 transform hover:scale-105"
-        >
-          <Heart className="w-6 h-6 fill-current" />
-        </Button>
+      <div onClick={handleCardClick}>
+        <div className="aspect-[4/5] bg-muted flex items-center justify-center">
+          {profile.images && profile.images.length > 0 ? (
+            <img 
+              src={profile.images[0]} 
+              alt={profile.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-4xl font-bold">
+              {profile.name.charAt(0)}
+            </div>
+          )}
+        </div>
+        <CardContent className="p-3">
+          <h3 className="font-semibold text-sm">{profile.name}, {age}</h3>
+          <p className="text-xs text-muted-foreground mb-2">{profile.location}</p>
+          {profile.professionalism && (
+            <p className="text-xs text-muted-foreground">{profile.professionalism}</p>
+          )}
+          
+          <div className="flex gap-2 mt-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMessage();
+              }}
+              className="flex-1"
+              disabled={isProfileIncomplete}
+            >
+              <MessageCircle className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPass();
+              }}
+              className="flex-1"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike();
+              }}
+              className="flex-1 bg-pink-500 hover:bg-pink-600"
+            >
+              <Heart className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardContent>
       </div>
     </Card>
   );
-};
+}

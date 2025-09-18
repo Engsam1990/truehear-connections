@@ -1,132 +1,86 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card } from "@/components/ui/card";
-import { AlertTriangle, X, Heart } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, X } from "lucide-react";
 
 interface ProfileCompletionAlertProps {
-  currentMember: any;
-  onCompleteProfile: () => void;
-  showInModal?: boolean;
-  onClose?: () => void;
+  isIncomplete: boolean;
+  onProfileClick: () => void;
 }
 
-export const ProfileCompletionAlert = ({ 
-  currentMember, 
-  onCompleteProfile, 
-  showInModal = false,
-  onClose 
-}: ProfileCompletionAlertProps) => {
+export function ProfileCompletionAlert({ isIncomplete, onProfileClick }: ProfileCompletionAlertProps) {
   const [showAlert, setShowAlert] = useState(false);
-  const { toast } = useToast();
+  const [isDismissed, setIsDismissed] = useState(false);
+  const [lastProfileAccess, setLastProfileAccess] = useState<number>(0);
 
   useEffect(() => {
-    if (currentMember) {
-      // Check if profile needs completion
-      const needsCompletion = !currentMember.about_me || !currentMember.reasons || 
-                             !currentMember.relationship_status || !currentMember.professionalism ||
-                             !currentMember.education_level || !currentMember.height || !currentMember.weight;
-      
-      if (needsCompletion) {
-        if (showInModal) {
-          // For modal display (when accessing profile)
-          setShowAlert(true);
-        } else {
-          // For timed alert - show after 30 seconds of browsing
-          const timer = setTimeout(() => {
-            setShowAlert(true);
-          }, 30000);
-          
-          return () => clearTimeout(timer);
-        }
-      }
+    if (!isIncomplete || isDismissed) {
+      setShowAlert(false);
+      return;
     }
-  }, [currentMember, showInModal]);
 
-  const handleCompleteProfile = () => {
-    onCompleteProfile();
+    // Check if user has been active for more than 30 seconds without accessing profile
+    const timer = setTimeout(() => {
+      const now = Date.now();
+      if (now - lastProfileAccess > 30000) { // 30 seconds
+        setShowAlert(true);
+      }
+    }, 30000);
+
+    return () => clearTimeout(timer);
+  }, [isIncomplete, isDismissed, lastProfileAccess]);
+
+  const handleProfileAccess = () => {
+    setLastProfileAccess(Date.now());
     setShowAlert(false);
-    if (onClose) onClose();
   };
 
   const handleDismiss = () => {
+    setIsDismissed(true);
     setShowAlert(false);
-    if (onClose) onClose();
-    
-    if (!showInModal) {
-      toast({
-        title: "Reminder set",
-        description: "We'll remind you again later to complete your profile",
-      });
-    }
   };
 
-  if (!showAlert) return null;
+  // Update last profile access when profile is clicked
+  useEffect(() => {
+    const handleProfileClick = () => {
+      handleProfileAccess();
+    };
+    
+    // Listen for profile icon clicks
+    document.addEventListener('profile-click', handleProfileClick);
+    return () => document.removeEventListener('profile-click', handleProfileClick);
+  }, []);
 
-  const AlertContent = () => (
-    <>
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0">
-          <div className="w-10 h-10 bg-gradient-to-r from-love-pink to-love-orange rounded-full flex items-center justify-center">
-            <Heart className="w-5 h-5 text-white fill-current" />
-          </div>
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-foreground mb-2">
-            Get Better Matches! 💖
-          </h3>
-          <p className="text-muted-foreground text-sm mb-4">
-            Complete your profile to get personalized matches based on your preferences and interests. Users with complete profiles get 5x more matches!
-          </p>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              className="bg-gradient-to-r from-love-pink to-love-orange text-white"
-              onClick={handleCompleteProfile}
-            >
-              Complete Profile
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDismiss}
-            >
-              {showInModal ? "Close" : "Later"}
-            </Button>
-          </div>
-        </div>
-        {!showInModal && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="p-1 h-auto"
-            onClick={handleDismiss}
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
-    </>
-  );
-
-  if (showInModal) {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <Card className="max-w-md w-full p-6">
-          <AlertContent />
-        </Card>
-      </div>
-    );
+  if (!showAlert) {
+    return null;
   }
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-40 md:left-auto md:right-4 md:max-w-sm">
-      <Alert className="border-love-pink bg-background shadow-lg">
-        <AlertDescription>
-          <AlertContent />
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
+      <Alert className="border-yellow-200 bg-yellow-50 relative">
+        <AlertCircle className="h-4 w-4 text-yellow-600" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleDismiss}
+          className="absolute right-2 top-2 h-6 w-6 p-0 hover:bg-yellow-100"
+        >
+          <X className="h-3 w-3" />
+        </Button>
+        <AlertDescription className="text-yellow-800 pr-8">
+          Get better matches by completing your registration
+          <Button
+            variant="link"
+            onClick={() => {
+              handleProfileAccess();
+              onProfileClick();
+            }}
+            className="p-0 h-auto text-yellow-600 underline ml-2"
+          >
+            Complete Profile
+          </Button>
         </AlertDescription>
       </Alert>
     </div>
   );
-};
+}
