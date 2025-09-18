@@ -114,7 +114,7 @@ const Index = () => {
         img_links(img_id, is_primary)
       `)
       .not('status', 'is', null)  // Get members with any status
-      .limit(6);
+      .limit(20);
     
     if (data && data.length > 0) {
       const profilesWithAge = data.map(profile => ({
@@ -136,7 +136,7 @@ const Index = () => {
           about_me,
           professionalism
         `)
-        .limit(6);
+        .limit(20);
       
       if (fallbackData) {
         const profilesWithAge = fallbackData.map(profile => ({
@@ -184,7 +184,7 @@ const Index = () => {
         img_links(img_id, is_primary)
       `)
       .neq('id', currentMember.id)
-      .limit(10);
+      .limit(20);
 
     const { data, error } = await query;
     
