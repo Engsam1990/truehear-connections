@@ -6,6 +6,7 @@ import { ChatList } from "@/components/ChatList";
 import { AuthPage } from "@/components/AuthPage";
 import { Onboarding } from "@/components/Onboarding";
 import { ProfileCompletionAlert } from "@/components/ProfileCompletionAlert";
+import { DiscoverPage } from "@/components/DiscoverPage";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Heart, Sparkles, Users, MessageSquare, LogOut, User, ChevronDown } from "lucide-react";
@@ -155,6 +156,32 @@ const Index = () => {
 
   const createBasicMemberProfile = async () => {
     if (!user) return;
+    
+    // First check if member already exists by email
+    const { data: existingMember } = await supabase
+      .from('members')
+      .select('*')
+      .eq('email', user.email || '')
+      .maybeSingle();
+    
+    if (existingMember) {
+      // Update the existing member with user_id
+      const { data: updatedMember, error } = await supabase
+        .from('members')
+        .update({ user_id: user.id })
+        .eq('id', existingMember.id)
+        .select()
+        .single();
+        
+      if (updatedMember) {
+        setCurrentMember(updatedMember);
+        const needsCompletion = !updatedMember.about_me || !updatedMember.reasons || 
+                               !updatedMember.relationship_status || !updatedMember.professionalism ||
+                               !updatedMember.education_level || !updatedMember.height || !updatedMember.weight;
+        setProfileIncomplete(needsCompletion);
+        return;
+      }
+    }
     
     const basicProfile = {
       user_id: user.id,
@@ -557,58 +584,11 @@ const Index = () => {
   };
 
   const renderDiscoverTab = () => {
-    if (profiles.length === 0) {
-      return (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <Card className="p-8 text-center max-w-sm">
-            <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">No profiles available</h3>
-            <p className="text-muted-foreground mb-4">
-              Check back later for new profiles in your area!
-            </p>
-          </Card>
-        </div>
-      );
-    }
-
     return (
-      <div className="p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold mb-2">Discover New People</h2>
-            <p className="text-muted-foreground">
-              Find your perfect match from {profiles.length} available profiles
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {profiles.map((profile) => (
-              <ProfileCard
-                key={profile.id}
-                profile={profile}
-                onLike={() => handleLike(profile.member_id)}
-                onPass={() => handlePass(profile.member_id)}
-                currentMember={currentMember}
-                isProfileIncomplete={profileIncomplete}
-              />
-            ))}
-          </div>
-
-          {hasMoreProfiles && profiles.length > 0 && (
-            <div className="flex justify-center mt-8">
-              <Button
-                onClick={loadMoreProfiles}
-                variant="outline"
-                size="lg"
-                className="flex items-center gap-2"
-              >
-                <ChevronDown className="w-4 h-4" />
-                View More
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+      <DiscoverPage 
+        currentMember={currentMember} 
+        profileIncomplete={profileIncomplete}
+      />
     );
   };
 
