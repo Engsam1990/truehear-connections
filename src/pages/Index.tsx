@@ -165,18 +165,27 @@ const Index = () => {
       .maybeSingle();
     
     if (existingMember) {
-      // Update the existing member with user_id
-      const { data: updatedMember, error } = await supabase
-        .from('members')
-        .update({ user_id: user.id })
-        .eq('id', existingMember.id)
-        .select()
-        .single();
-        
-      if (updatedMember) {
-        setCurrentMember(updatedMember);
-        const needsCompletion = !updatedMember.reasons || 
-                               !updatedMember.relationship_status;
+      // Update the existing member with user_id if not already set
+      if (!existingMember.user_id) {
+        const { data: updatedMember, error } = await supabase
+          .from('members')
+          .update({ user_id: user.id })
+          .eq('id', existingMember.id)
+          .select()
+          .single();
+          
+        if (updatedMember) {
+          setCurrentMember(updatedMember);
+          const needsCompletion = !updatedMember.reasons || 
+                                 !updatedMember.relationship_status;
+          setProfileIncomplete(needsCompletion);
+          return;
+        }
+      } else {
+        // Member already linked to a user
+        setCurrentMember(existingMember);
+        const needsCompletion = !existingMember.reasons || 
+                               !existingMember.relationship_status;
         setProfileIncomplete(needsCompletion);
         return;
       }
@@ -361,7 +370,7 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-white/30 text-white hover:bg-white/10 hover:text-white text-lg px-8 py-4"
+                  className="border-white/30 text-white hover:bg-white/20 hover:text-white hover:border-white/50 text-lg px-8 py-4"
                   onClick={() => {
                     document.getElementById('preview-section')?.scrollIntoView({ 
                       behavior: 'smooth' 
@@ -417,6 +426,19 @@ const Index = () => {
                   </div>
                 </Card>
               ))}
+            </div>
+
+            {/* View More Button */}
+            <div className="text-center mb-12">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                onClick={() => setShowAuthModal(true)}
+              >
+                View More Singles
+                <Users className="w-4 h-4 ml-2" />
+              </Button>
             </div>
 
             {/* Features Section */}

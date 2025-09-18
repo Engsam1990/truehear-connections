@@ -68,25 +68,34 @@ export function DiscoverPage({ currentMember, profileIncomplete }: DiscoverPageP
           .lte('birthdate', `${maxBirthYear}-12-31`);
       }
 
-      // Get member_id from current member
-      const memberIdQuery = await supabase
-        .from('user_mappings')
-        .select('member_id')
-        .eq('supabase_user_id', currentMember.user_id)
-        .single();
+      // Get member_id from current member for filtering interactions
+      let memberIdNum = null;
+      if (currentMember.member_id) {
+        memberIdNum = Number(currentMember.member_id);
+      } else {
+        // Try to get member_id from user_mappings if not available
+        const memberIdQuery = await supabase
+          .from('user_mappings')
+          .select('member_id')
+          .eq('supabase_user_id', currentMember.user_id)
+          .single();
+        
+        if (memberIdQuery.data?.member_id) {
+          memberIdNum = Number(memberIdQuery.data.member_id);
+        }
+      }
 
-      if (!memberIdQuery.data?.member_id) return;
-      const memberIdNum = Number(memberIdQuery.data.member_id);
+      // Exclude already liked/passed profiles only if we have member_id
+      if (memberIdNum) {
+        const { data: interactions } = await supabase
+          .from('likes')
+          .select('sent_to')
+          .eq('sent_from', memberIdNum);
 
-      // Exclude already liked/passed profiles
-      const { data: interactions } = await supabase
-        .from('likes')
-        .select('sent_to')
-        .eq('sent_from', memberIdNum);
-
-      if (interactions && interactions.length > 0) {
-        const interactedIds = interactions.map(i => i.sent_to);
-        query = query.not('member_id', 'in', `(${interactedIds.join(',')})`);
+        if (interactions && interactions.length > 0) {
+          const interactedIds = interactions.map(i => i.sent_to);
+          query = query.not('member_id', 'in', `(${interactedIds.join(',')})`);
+        }
       }
 
       const { data, error } = await query.limit(10);
