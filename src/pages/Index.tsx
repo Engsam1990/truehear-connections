@@ -153,6 +153,56 @@ const Index = () => {
     }
   };
 
+  const createBasicMemberProfile = async () => {
+    if (!user) return;
+    
+    const basicProfile = {
+      user_id: user.id,
+      name: user.email?.split('@')[0] || 'User',
+      email: user.email || '',
+      password: '', // Handled by auth
+      birthdate: '1990-01-01', // Default date
+      gender: 'prefer_not_to_say',
+      location: 'Not specified',
+      relationship_status: 'single',
+      having_kid: 'prefer_not_to_say',
+      need_kids: 'maybe',
+      education_level: 'prefer_not_to_say',
+      professionalism: 'prefer_not_to_say',
+      alcoholism: 'prefer_not_to_say',
+      smoker: 'prefer_not_to_say',
+      height: 'prefer_not_to_say',
+      weight: 'prefer_not_to_say',
+      preferred_age_from: '18',
+      preferred_age_to: '99',
+      reasons: '',
+      about_me: '',
+      confirmation_code: Math.random().toString(36).substring(7),
+      confirmed: 'yes', // Auto-confirm to avoid issues
+      subscription: 'free',
+      get_news: 'yes',
+      remember_token: ''
+    };
+
+    const { data, error } = await supabase
+      .from('members')
+      .insert(basicProfile)
+      .select()
+      .single();
+
+    if (data) {
+      setCurrentMember(data);
+      setProfileIncomplete(true); // They'll want to complete it eventually
+    } else if (error) {
+      console.error('Error creating basic profile:', error);
+      toast({
+        title: "Profile Creation Error",
+        description: "Please try refreshing the page",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchCurrentMember = async () => {
     if (!user) return;
     
@@ -164,15 +214,15 @@ const Index = () => {
     
     if (data) {
       setCurrentMember(data);
-      // Check if profile needs completion - require all essential fields
+      // Check if profile needs completion - optional fields for better matches
       const needsCompletion = !data.about_me || !data.reasons || 
                              !data.relationship_status || !data.professionalism ||
                              !data.education_level || !data.height || !data.weight;
       setProfileIncomplete(needsCompletion);
-      // Don't automatically show onboarding - let user browse with reminders
+      // Profile completion is completely optional - never force onboarding
     } else if (!error) {
-      // User doesn't have a member profile yet - show onboarding
-      setShowOnboarding(true);
+      // User doesn't have a member profile yet - create basic profile to avoid errors
+      await createBasicMemberProfile();
     }
   };
 
