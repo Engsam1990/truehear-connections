@@ -5,9 +5,10 @@ import { MatchModal } from "@/components/MatchModal";
 import { ChatList } from "@/components/ChatList";
 import { AuthPage } from "@/components/AuthPage";
 import { Onboarding } from "@/components/Onboarding";
+import { ProfileCompletionAlert } from "@/components/ProfileCompletionAlert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Heart, Sparkles, Users, MessageSquare, LogOut } from "lucide-react";
+import { Heart, Sparkles, Users, MessageSquare, LogOut, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +74,8 @@ const Index = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [previewProfiles, setPreviewProfiles] = useState<any[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfileAlert, setShowProfileAlert] = useState(false);
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
   const { toast } = useToast();
   const { user, session, loading, signOut } = useAuth();
 
@@ -139,9 +142,8 @@ const Index = () => {
       const needsCompletion = !data.about_me || !data.reasons || 
                              !data.relationship_status || !data.professionalism ||
                              !data.education_level || !data.height || !data.weight;
-      if (needsCompletion) {
-        setShowOnboarding(true);
-      }
+      setProfileIncomplete(needsCompletion);
+      // Don't automatically show onboarding - let user browse with reminders
     } else if (!error) {
       // User doesn't have a member profile yet - show onboarding
       setShowOnboarding(true);
@@ -151,16 +153,28 @@ const Index = () => {
   const fetchProfiles = async () => {
     if (!currentMember) return;
     
-    // Get members that match age preferences and haven't been liked/passed yet
-    const { data, error } = await supabase
+    // Get members - if profile incomplete, show unfiltered matches
+    let query = supabase
       .from('members')
       .select(`
         *,
         img_links(img_id, is_primary)
       `)
       .neq('id', currentMember.id)
-      .eq('status', 'active')
-      .limit(10);
+      .eq('status', 'active');
+
+    // If profile is complete, apply age filtering
+    if (!profileIncomplete && currentMember.preferred_age_from && currentMember.preferred_age_to) {
+      const currentYear = new Date().getFullYear();
+      const minBirthYear = currentYear - parseInt(currentMember.preferred_age_to);
+      const maxBirthYear = currentYear - parseInt(currentMember.preferred_age_from);
+      
+      query = query
+        .gte('birthdate', `${minBirthYear}-01-01`)
+        .lte('birthdate', `${maxBirthYear}-12-31`);
+    }
+    
+    const { data, error } = await query.limit(10);
     
     if (data) {
       // Filter out members we've already interacted with
@@ -349,7 +363,7 @@ const Index = () => {
               <div className="p-4">
                 <AuthPage onAuthSuccess={() => {
                   setShowAuthModal(false);
-                  window.location.reload();
+                  // Don't reload, just let the auth state change handle the redirect
                 }} />
               </div>
             </div>
@@ -518,44 +532,84 @@ const Index = () => {
     </div>
   );
 
-  const renderProfileTab = () => (
-    <div className="flex-1 p-6">
-      <div className="text-center mb-8">
-        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-accent mx-auto mb-4 flex items-center justify-center text-white text-4xl font-bold">
-          Y
-        </div>
-        <h2 className="text-2xl font-bold mb-2">Your Profile</h2>
-        <p className="text-muted-foreground">
-          Complete your profile to get better matches
-        </p>
-      </div>
-      
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4">Profile completion</h3>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm">Add photos</span>
-            <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded">Required</span>
+  const renderProfileTab = () => {
+    // Show profile completion alert when accessing profile if incomplete
+    if (profileIncomplete) {
+      setShowProfileAlert(true);
+    }
+    
+    return (
+      <div className="flex-1 p-6">
+        <div className="text-center mb-8">
+          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-accent mx-auto mb-4 flex items-center justify-center text-white text-4xl font-bold">
+            {currentMember?.name?.charAt(0) || 'Y'}
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm">Write bio</span>
-            <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded">Required</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm">Add interests</span>
-            <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">Optional</span>
-          </div>
+          <h2 className="text-2xl font-bold mb-2">{currentMember?.name || 'Your Profile'}</h2>
+          <p className="text-muted-foreground">
+            {profileIncomplete 
+              ? "Complete your profile to get better matches" 
+              : "Your profile is looking great!"}
+          </p>
         </div>
         
-        <Button 
-          className="w-full mt-6 bg-gradient-to-r from-primary to-accent"
-          onClick={() => setShowOnboarding(true)}
-        >
-          Complete Profile
-        </Button>
-      </Card>
-    </div>
-  );
+        <Card className="p-6 max-w-md mx-auto mb-6">
+          <h3 className="font-bold mb-4">Profile Status</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Basic info</span>
+              <span className="text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded">Complete</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">About me</span>
+              <span className={`text-xs px-2 py-1 rounded ${
+                currentMember?.about_me 
+                  ? 'bg-green-500/20 text-green-600'
+                  : 'bg-accent/20 text-accent'
+              }`}>
+                {currentMember?.about_me ? 'Complete' : 'Required'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Lifestyle details</span>
+              <span className={`text-xs px-2 py-1 rounded ${
+                currentMember?.height && currentMember?.weight 
+                  ? 'bg-green-500/20 text-green-600'
+                  : 'bg-accent/20 text-accent'
+              }`}>
+                {currentMember?.height && currentMember?.weight ? 'Complete' : 'Required'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Interests & goals</span>
+              <span className={`text-xs px-2 py-1 rounded ${
+                currentMember?.reasons 
+                  ? 'bg-green-500/20 text-green-600'
+                  : 'bg-accent/20 text-accent'
+              }`}>
+                {currentMember?.reasons ? 'Complete' : 'Required'}
+              </span>
+            </div>
+          </div>
+          
+          <Button 
+            className="w-full mt-6 bg-gradient-to-r from-primary to-accent"
+            onClick={() => setShowOnboarding(true)}
+          >
+            {profileIncomplete ? 'Complete Profile' : 'Edit Profile'}
+          </Button>
+          
+          <Button
+            variant="outline"
+            className="w-full mt-3"
+            onClick={signOut}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </Card>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -586,6 +640,27 @@ const Index = () => {
 
       {/* Bottom Navigation */}
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Profile Completion Alert */}
+      {profileIncomplete && currentMember && (
+        <ProfileCompletionAlert
+          currentMember={currentMember}
+          onCompleteProfile={() => setShowOnboarding(true)}
+        />
+      )}
+
+      {/* Profile Access Alert Modal */}
+      {showProfileAlert && (
+        <ProfileCompletionAlert
+          currentMember={currentMember}
+          onCompleteProfile={() => {
+            setShowProfileAlert(false);
+            setShowOnboarding(true);
+          }}
+          showInModal={true}
+          onClose={() => setShowProfileAlert(false)}
+        />
+      )}
 
       {/* Match Modal */}
       <MatchModal
