@@ -76,7 +76,7 @@ export function DiscoverPage({ currentMember, profileIncomplete }: DiscoverPageP
         .single();
 
       if (!memberIdQuery.data?.member_id) return;
-      const memberIdNum = memberIdQuery.data.member_id;
+      const memberIdNum = Number(memberIdQuery.data.member_id);
 
       // Exclude already liked/passed profiles
       const { data: interactions } = await supabase
